@@ -122,7 +122,7 @@ private fun ViewerGlassOverflowSurface(
     content: @Composable BoxScope.() -> Unit
 ) {
     Box(modifier) {
-        Box(Modifier.matchParentSize().viewerGlass(backdrop, color, withShadow = false))
+        Box(Modifier.matchParentSize().viewerGlass(backdrop, color, withShadow = true))
         Box(Modifier.fillMaxWidth().zIndex(1f), content = content)
     }
 }
@@ -194,17 +194,10 @@ internal fun PdfViewerBottomToolbar(
 ) {
     val accent = LiquidGlassColors.Blue
 
-    // The floating pills paint nothing at all, exactly as Home's controls do: `LiquidIconButton` is
-    // called there with no `surfaceColor`, so its `onDrawSurface` is a no-op and the button is pure
-    // refraction. `drawRect(Color.Transparent)` is the same no-op for the `viewerGlass` surfaces
-    // here. The header's back and search circles already work this way; without this the Editor
-    // Tools pill, the tool row and the share capsule were the only chrome left carrying a tint, and
-    // sitting beside clear circles they read as slabs.
-    //
-    // `glass` is deliberately still used for the *panels* (the draw/OCR/image sub-toolbar and the
-    // export-feedback strip): those are dense rows of controls that need a plate to sit on, and they
-    // cover the document rather than floating over it.
-    val pillGlass = Color.Transparent
+    // Reader chrome sits over arbitrary page content. Keep its ink adaptive, and give the controls
+    // a contrasting frosted plate plus a soft shadow so they remain visible over white paper.
+    val pillGlass = if (fg.luminance() < 0.5f) Color(0xFFF5F6F8).copy(alpha = 0.94f)
+        else Color(0xFF171B22).copy(alpha = 0.88f)
 
     val showDrawTools  = drawingToolActive
     val showImageTools = activeTool == PdfEditTool.Image && activeImageId != null
@@ -475,7 +468,7 @@ internal fun PdfViewerBottomToolbar(
         // ── Export feedback row ────────────────────────────────────────────
         if (exportError != null || exportMessage != null || isExporting) {
             Row(
-                Modifier.fillMaxWidth().viewerGlass(backdrop, glass, withShadow = false).padding(12.dp),
+                Modifier.fillMaxWidth().viewerGlass(backdrop, glass, withShadow = true).padding(12.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment     = Alignment.CenterVertically
             ) {
@@ -751,7 +744,7 @@ internal fun PdfViewerBottomToolbar(
             modifier = Modifier.align(Alignment.CenterHorizontally)
         ) {
             Row(
-                Modifier.fillMaxWidth(),
+                Modifier.fillMaxWidth().viewerGlass(backdrop, pillGlass, withShadow = true).padding(6.dp),
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {

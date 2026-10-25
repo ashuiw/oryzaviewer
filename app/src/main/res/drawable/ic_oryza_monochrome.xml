@@ -1,8 +1,12 @@
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
-    android:viewportWidth="108"
-    android:viewportHeight="108">
-    <path android:fillColor="#FFFFFFFF" android:pathData="M24,28 Q24,24 29,25 L49,30 Q52,31 54,35 Q56,31 59,30 L79,25 Q84,24 84,29 L84,71 Q84,75 80,76 L59,81 Q55,82 54,86 Q53,82 49,81 L28,76 Q24,75 24,71 Z" />
-    <path android:fillColor="#FFFFFFFF" android:pathData="M53,63 Q51,56 52,49 Q53,42 57,35 Q58,33 60,34 Q62,35 60,38 Q57,44 57,50 Q57,57 59,63 Z M56,45 Q48,44 46,38 Q54,38 57,42 Z M58,40 Q59,32 66,30 Q65,38 60,42 Z M54,51 Q46,51 43,45 Q51,45 55,48 Z M58,49 Q61,42 68,42 Q66,49 59,52 Z" />
+    android:viewportWidth="512"
+    android:viewportHeight="512">
+    <!-- The rice grain stays legible as a single-color themed launcher icon. -->
+    <group android:pivotX="256" android:pivotY="256" android:scaleX="0.8" android:scaleY="0.8">
+        <path
+            android:fillColor="#FFFFFFFF"
+            android:pathData="M258,214 C312,252 312,340 258,392 C204,340 204,252 258,214 Z" />
+    </group>
 </vector>

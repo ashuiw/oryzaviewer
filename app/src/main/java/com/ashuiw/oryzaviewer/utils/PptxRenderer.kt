@@ -5,6 +5,7 @@ import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import android.graphics.Path
 import android.graphics.RectF
 import android.graphics.Typeface
 import android.graphics.pdf.PdfDocument
@@ -217,6 +218,21 @@ internal object PptxRenderer {
                 (layoutPath != null && drawBackground(canvas, part(layoutPath), theme, masterPath, w, h)) ||
                 (masterPath != null && drawBackground(canvas, part(masterPath), theme, masterPath, w, h))
 
+            // Master and layout parts also contain real artwork (logos, rules, decorative
+            // shapes, and text), not only placeholder geometry. Office paints these below the
+            // slide's own content. Draw them in that order while leaving placeholders to be
+            // resolved from the slide so template prompts never leak into the rendered page.
+            masterPath?.let { path ->
+                part(path)?.find("p:spTree")?.let { tree ->
+                    drawShapeTree(canvas, tree, ctx.forPart(path), identityTransform(), renderPlaceholders = false)
+                }
+            }
+            layoutPath?.let { path ->
+                part(path)?.find("p:spTree")?.let { tree ->
+                    drawShapeTree(canvas, tree, ctx.forPart(path), identityTransform(), renderPlaceholders = false)
+                }
+            }
+
             val tree = slide.find("p:spTree") ?: return
             drawShapeTree(canvas, tree, ctx, identityTransform())
         }
@@ -295,11 +311,17 @@ internal object PptxRenderer {
             return out
         }
 
-        private fun drawShapeTree(canvas: Canvas, tree: OoxmlNode, ctx: SlideContext, transform: Transform) {
+        private fun drawShapeTree(
+            canvas: Canvas,
+            tree: OoxmlNode,
+            ctx: SlideContext,
+            transform: Transform,
+            renderPlaceholders: Boolean = true
+        ) {
             for (node in tree.children) {
                 runCatching {
                     when (node.name) {
-                        "p:sp" -> drawShape(canvas, node, ctx, transform)
+                        "p:sp" -> if (renderPlaceholders || node.find("p:ph") == null) drawShape(canvas, node, ctx, transform)
                         "p:pic" -> drawPicture(canvas, node, ctx, transform)
                         "p:graphicFrame" -> drawGraphicFrame(canvas, node, ctx, transform)
                         "p:grpSp" -> {
@@ -308,7 +330,7 @@ internal object PptxRenderer {
                             // actually sits. Without composing that, every grouped shape lands at
                             // its raw authoring offset, which is usually off-slide entirely.
                             val child = groupTransform(node)?.let { compose(transform, it) } ?: transform
-                            drawShapeTree(canvas, node, ctx, child)
+                            drawShapeTree(canvas, node, ctx, child, renderPlaceholders)
                         }
                     }
                 }
@@ -326,20 +348,56 @@ internal object PptxRenderer {
             if (rotation != 0f) canvas.rotate(rotation, box.centerX(), box.centerY())
 
             val fill = spPr?.child("a:solidFill")?.let { solidFillColor(it, ctx.theme) }
+            val geometry = shapePath(spPr?.find("a:prstGeom")?.attr("prst"), box)
             if (fill != null && spPr.child("a:noFill") == null) {
-                canvas.drawRect(box.toRectF(), Paint(Paint.ANTI_ALIAS_FLAG).apply { color = fill })
+                canvas.drawPath(geometry, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = fill; style = Paint.Style.FILL })
             }
             // An outline, when the author asked for one — this is what makes boxed callouts and
             // table-like arrangements of rectangles still read as boxes.
             spPr?.child("a:ln")?.child("a:solidFill")?.let { solidFillColor(it, ctx.theme) }?.let { stroke ->
                 val width = (spPr.child("a:ln")?.attr("w")?.toFloatOrNull()?.div(EmuPerPoint) ?: 1f).coerceIn(0.5f, 8f)
-                canvas.drawRect(box.toRectF(), Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                canvas.drawPath(geometry, Paint(Paint.ANTI_ALIAS_FLAG).apply {
                     color = stroke; style = Paint.Style.STROKE; strokeWidth = width
                 })
             }
 
             shape.child("p:txBody")?.let { drawTextBody(canvas, it, box, ctx, placeholderType(shape), fill, inheritanceOf(shape, ctx)) }
             canvas.restore()
+        }
+
+        /** Common PowerPoint preset geometries; the previous renderer painted every shape as a rectangle. */
+        private fun shapePath(preset: String?, box: Rect): Path {
+            val l = box.left; val t = box.top; val r = box.right; val b = box.bottom
+            val cx = box.centerX(); val cy = box.centerY()
+            return Path().apply {
+                when (preset) {
+                    "ellipse" -> addOval(box.toRectF(), Path.Direction.CW)
+                    "roundRect" -> addRoundRect(box.toRectF(), minOf(box.width(), box.height()) * 0.12f,
+                        minOf(box.width(), box.height()) * 0.12f, Path.Direction.CW)
+                    "triangle" -> { moveTo(cx, t); lineTo(r, b); lineTo(l, b); close() }
+                    "rtTriangle" -> { moveTo(l, t); lineTo(l, b); lineTo(r, b); close() }
+                    "diamond" -> { moveTo(cx, t); lineTo(r, cy); lineTo(cx, b); lineTo(l, cy); close() }
+                    "parallelogram" -> {
+                        val inset = box.width() * 0.2f
+                        moveTo(l + inset, t); lineTo(r, t); lineTo(r - inset, b); lineTo(l, b); close()
+                    }
+                    "trapezoid" -> {
+                        val inset = box.width() * 0.2f
+                        moveTo(l + inset, t); lineTo(r - inset, t); lineTo(r, b); lineTo(l, b); close()
+                    }
+                    "pentagon" -> {
+                        moveTo(cx, t); lineTo(r, t + box.height() * 0.38f); lineTo(r - box.width() * 0.1f, b)
+                        lineTo(l + box.width() * 0.1f, b); lineTo(l, t + box.height() * 0.38f); close()
+                    }
+                    "hexagon" -> {
+                        val inset = box.width() * 0.22f
+                        moveTo(l + inset, t); lineTo(r - inset, t); lineTo(r, cy); lineTo(r - inset, b)
+                        lineTo(l + inset, b); lineTo(l, cy); close()
+                    }
+                    "line", "straightConnector1" -> { moveTo(l, t); lineTo(r, b) }
+                    else -> addRect(box.toRectF(), Path.Direction.CW)
+                }
+            }
         }
 
         private fun drawPicture(canvas: Canvas, pic: OoxmlNode, ctx: SlideContext, transform: Transform) {
@@ -468,7 +526,9 @@ internal object PptxRenderer {
         val layout: OoxmlNode?,
         val master: OoxmlNode?,
         val placeholders: Map<String, Rect>
-    )
+    ) {
+        fun forPart(path: String) = SlideContext(theme, path, slideNumber, layout, master, placeholders)
+    }
 
     /** Inherited text-box properties ([bodies]) and list styles ([lists]), lowest priority first. */
     private class TextInheritance(val bodies: List<OoxmlNode>, val lists: List<OoxmlNode>) {

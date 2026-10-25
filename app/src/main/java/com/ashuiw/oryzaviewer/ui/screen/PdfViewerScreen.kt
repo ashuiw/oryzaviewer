@@ -112,6 +112,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
@@ -1665,14 +1666,17 @@ fun PdfViewerScreen(
                     val pillInk = rememberAdaptiveInk(topFg)
                     val findInk = rememberAdaptiveInk(topFg)
                     val moonInk = rememberAdaptiveInk(topFg)
-                    // No `surfaceColor`, exactly as Home calls it: the circle paints nothing of its own
-                    // and is pure refraction. Only the icon's colour adapts to the page.
+                    val topControlPlate = if (topFg.luminance() < 0.5f) {
+                        Color(0xFFF5F6F8).copy(alpha = 0.94f)
+                    } else {
+                        Color(0xFF171B22).copy(alpha = 0.88f)
+                    }
                     GlassBackButton(
                         onBack = { requestExit() },
                         backdrop = contentBackdrop,
                         modifier = backInk.modifier,
                         foreground = backInk.color,
-                        surfaceColor = Color.Unspecified,
+                        surfaceColor = topControlPlate,
                         onLongPressBack = if (hasUnsavedEdits) ({ requestExit() }) else LocalBackToLibraryAction.current,
                         longPressLabel = if (hasUnsavedEdits) stringResource(R.string.back) else null
                     )
@@ -1685,12 +1689,7 @@ fun PdfViewerScreen(
                             backdrop = contentBackdrop,
                             modifier = pillInk.modifier,
                             onClick = { showPageJumpDialog = true },
-                            // Transparent, not omitted: omitting falls back to the theme's 0.35 tint,
-                            // and this pill sits between two circles that paint nothing at all, so any
-                            // tint at all makes it read as a slab bolted between two pieces of glass.
-                            // `drawRect(Color.Transparent)` is the same no-op `LiquidIconButton`
-                            // performs when it is given no `surfaceColor`.
-                            surfaceColor = Color.Transparent,
+                            surfaceColor = topControlPlate,
                             contentColor = pillInk.color,
                             // The enclosing AnimatedVisibility already slides and fades the whole bar
                             // in every time the chrome returns; the pill's own spring would stack on
@@ -1705,14 +1704,16 @@ fun PdfViewerScreen(
                             else { focusManager.clearFocus(); viewModel.clearSearch(); findQuery = "" }
                         },
                         backdrop = contentBackdrop,
-                        modifier = findInk.modifier
+                        modifier = findInk.modifier,
+                        surfaceColor = topControlPlate
                     ) {
                         Icon(Icons.Rounded.Search, stringResource(R.string.viewer_find), Modifier.size(20.dp), findInk.color)
                     }
                     LiquidIconButton(
                         onClick = { darkPageOverride = !darkPageAppearance },
                         backdrop = contentBackdrop,
-                        modifier = moonInk.modifier
+                        modifier = moonInk.modifier,
+                        surfaceColor = topControlPlate
                     ) {
                         Icon(
                             if (darkPageAppearance) Icons.Rounded.LightMode else Icons.Rounded.DarkMode,

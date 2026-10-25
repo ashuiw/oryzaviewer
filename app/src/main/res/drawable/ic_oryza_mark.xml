@@ -1,22 +1,26 @@
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
-    android:viewportWidth="108"
-    android:viewportHeight="108">
-    <!-- Open pages with a growing rice sprout: a text-free mark that survives adaptive crops. -->
-    <path
-        android:fillColor="#185E43"
-        android:pathData="M24,28 Q24,24 29,25 L49,30 Q52,31 54,35 Q56,31 59,30 L79,25 Q84,24 84,29 L84,71 Q84,75 80,76 L59,81 Q55,82 54,86 Q53,82 49,81 L28,76 Q24,75 24,71 Z" />
-    <path
-        android:fillColor="#F5F1E7"
-        android:pathData="M31,34 L48,38 Q50,39 50,42 L50,72 Q48,69 45,68 L31,65 Z" />
-    <path
-        android:fillColor="#F5F1E7"
-        android:pathData="M77,34 L60,38 Q58,39 58,42 L58,72 Q60,69 63,68 L77,65 Z" />
-    <path
-        android:fillColor="#D5A847"
-        android:pathData="M53,63 Q51,56 52,49 Q53,42 57,35 Q58,33 60,34 Q62,35 60,38 Q57,44 57,50 Q57,57 59,63 Z" />
-    <path
-        android:fillColor="#D5A847"
-        android:pathData="M56,45 Q48,44 46,38 Q54,38 57,42 Z M58,40 Q59,32 66,30 Q65,38 60,42 Z M54,51 Q46,51 43,45 Q51,45 55,48 Z M58,49 Q61,42 68,42 Q66,49 59,52 Z" />
+    android:viewportWidth="512"
+    android:viewportHeight="512">
+    <!-- Adapted from the supplied Oryza logo SVG. Keep the artwork inside the adaptive-icon safe zone. -->
+    <group android:pivotX="256" android:pivotY="256" android:scaleX="0.8" android:scaleY="0.8">
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M168,92 H300 L376,168 V396 A28,28 0,0 1,348 424 H168 A28,28 0,0 1,140 396 V120 A28,28 0,0 1,168 92 Z" />
+        <path
+            android:fillColor="#CFE8D5"
+            android:pathData="M300,92 V148 A20,20 0,0 0,320 168 H376 Z" />
+        <path
+            android:fillColor="#E09A1F"
+            android:pathData="M258,214 C312,252 312,340 258,392 C204,340 204,252 258,214 Z" />
+        <path
+            android:fillColor="#FFFFFF"
+            android:fillAlpha="0.9"
+            android:pathData="M254,246 H263 V366 H254 Z" />
+        <path
+            android:fillColor="#FFFFFF"
+            android:fillAlpha="0.72"
+            android:pathData="M255,278 L232,260 L237,254 L258,271 Z M256,279 L279,260 L284,254 L260,273 Z M255,309 L228,289 L233,283 L258,302 Z M256,310 L283,289 L288,283 L260,303 Z" />
+    </group>
 </vector>
