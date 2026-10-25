@@ -59,10 +59,18 @@ object OfficeEngine {
         return OfficeEngineClient.convertBlocking(context, source, fileName).pdf
     }
 
-    /** Whether to show the one-time "Improve fidelity with the Office engine" hint. */
-    fun shouldOfferHint(context: Context, fileName: String): Boolean =
-        isOfficeFile(fileName) && isSupported() && !OfficeEngineStore.isInstalled(context) &&
-            !prefs(context).getBoolean(KEY_HINT_DISMISSED, false)
+    /**
+     * Offer LibreOffice after a built-in Office render. For presentations, repeat the offer until
+     * the engine is installed: the built-in renderer cannot reproduce charts, SmartArt, or every
+     * PowerPoint effect, so a one-time dismissal otherwise leaves the user with a permanently
+     * incomplete preview and no reminder of the full renderer.
+     */
+    fun shouldOfferHint(context: Context, fileName: String): Boolean {
+        if (!isOfficeFile(fileName) || !isSupported() || OfficeEngineStore.isInstalled(context)) return false
+        val ext = fileName.substringAfterLast('.', "").lowercase()
+        val presentation = ext in setOf("ppt", "pptx", "pptm", "pps", "ppsx", "odp", "otp", "odg")
+        return presentation || !prefs(context).getBoolean(KEY_HINT_DISMISSED, false)
+    }
 
     fun dismissHint(context: Context) {
         prefs(context).edit().putBoolean(KEY_HINT_DISMISSED, true).apply()

@@ -744,7 +744,7 @@ internal fun PdfViewerBottomToolbar(
             modifier = Modifier.align(Alignment.CenterHorizontally)
         ) {
             Row(
-                Modifier.fillMaxWidth().viewerGlass(backdrop, pillGlass, withShadow = true).padding(6.dp),
+                Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -757,7 +757,7 @@ internal fun PdfViewerBottomToolbar(
                         backdrop = backdrop,
                         modifier = editorInk.modifier.size(ReaderControlSize),
                         tint = if (editorOpen) accent else Color.Unspecified,
-                        surfaceColor = if (!editorOpen && (readerTourStep == 0 || readerTourStep == 2)) LiquidGlassColors.Blue.copy(alpha = 0.22f) else Color.Unspecified
+                        surfaceColor = if (!editorOpen && (readerTourStep == 0 || readerTourStep == 2)) LiquidGlassColors.Blue.copy(alpha = 0.22f) else pillGlass
                     ) {
                         Icon(Icons.Rounded.Edit, stringResource(R.string.viewer_editor_tools), Modifier.size(20.dp), if (editorOpen) Color.White else editorInk.color)
                     }
@@ -767,7 +767,8 @@ internal fun PdfViewerBottomToolbar(
                         onClick = onToggleAutoScroll,
                         backdrop = backdrop,
                         modifier = autoScrollInk.modifier.size(ReaderControlSize),
-                        tint = if (autoScrollActive) LiquidGlassColors.Green else Color.Unspecified
+                        tint = if (autoScrollActive) LiquidGlassColors.Green else Color.Unspecified,
+                        surfaceColor = pillGlass
                     ) {
                         Icon(
                             if (autoScrollActive) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
@@ -787,7 +788,7 @@ internal fun PdfViewerBottomToolbar(
                         onClick = onCycleAutoScrollSpeed,
                         backdrop = backdrop,
                         modifier = speedInk.modifier.widthIn(min = 72.dp),
-                        surfaceColor = Color.Transparent
+                        surfaceColor = pillGlass
                     ) {
                         BasicText(
                             text = "${autoScrollSpeed}×",

@@ -824,7 +824,12 @@ fun PdfViewerScreen(
             if (listState.firstVisibleItemIndex != targetPage) listState.scrollToItem(targetPage)
         }
     }
-    val currentPageIndex = listState.firstVisibleItemIndex.coerceIn(0, safePageCount - 1)
+    // `firstVisibleItemIndex` is often the previous page's small bottom sliver. Use the page at
+    // the viewport centre so page labels, bookmarks, and reader actions agree with the page the
+    // user is actually looking at; derivedStateOf avoids recomposing on every scroll pixel.
+    val currentPageIndex by remember(safePageCount) {
+        derivedStateOf { viewportPlacementTarget().first.coerceIn(0, safePageCount - 1) }
+    }
     // Back clears an active text selection first (registered after the viewer's own BackHandler, so
     // it takes precedence), exactly like a TextView's selection mode.
     val selectionActive by remember { derivedStateOf { textSelection.hasSelection } }
@@ -1375,7 +1380,11 @@ fun PdfViewerScreen(
                     LazyColumn(
                         state = listState,
                         flingBehavior = if (bookMode) bookFling else pageFling,
-                        userScrollEnabled = activeTool == PdfEditTool.None && scale <= 1.01f,
+                        // Text and note placement are tap-only, so allow normal page navigation
+                        // while either is selected. Drag tools keep the list locked to avoid a
+                        // vertical swipe scrolling the document instead of drawing on the page.
+                        userScrollEnabled = (activeTool == PdfEditTool.None ||
+                            activeTool == PdfEditTool.Text || activeTool == PdfEditTool.Note) && scale <= 1.01f,
                         modifier = Modifier.fillMaxSize(),
                         // Center the block when it's shorter than the viewport (e.g. a
                         // single page) so it sits neatly centered instead of pinned to
@@ -1612,7 +1621,10 @@ fun PdfViewerScreen(
         var scrubberDragging by remember { mutableStateOf(false) }
         val scrubberBright = listState.isScrollInProgress || scrubberDragging
         val scrubberAlpha by androidx.compose.animation.core.animateFloatAsState(
-            targetValue = if (scrubberBright) 1f else 0.4f,
+            // Keep page navigation obvious while an edit tool is selected: the document itself is
+            // intentionally locked for drag tools, and the right-edge rail remains their route to
+            // another page without clearing the active tool.
+            targetValue = if (scrubberBright || activeTool != PdfEditTool.None) 1f else 0.4f,
             animationSpec = tween(durationMillis = if (scrubberBright) 120 else 600),
             label = "scrubberFade"
         )
