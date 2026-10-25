@@ -1,0 +1,11 @@
+# Copy this file to key.properties and fill with your upload key details.
+# You can also use env vars:
+# ORYZAVIEWER_UPLOAD_STORE_FILE
+# ORYZAVIEWER_UPLOAD_STORE_PASSWORD
+# ORYZAVIEWER_UPLOAD_KEY_ALIAS
+# ORYZAVIEWER_UPLOAD_KEY_PASSWORD
+
+storeFile=.signing/upload-keystore.jks
+storePassword=CHANGE_ME
+keyAlias=upload
+keyPassword=CHANGE_ME
